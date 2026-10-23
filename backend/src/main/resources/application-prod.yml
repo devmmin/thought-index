@@ -1,0 +1,10 @@
+# 운영: 접속 정보는 전부 환경변수로 주입 (코드/깃에 비밀번호 X)
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}

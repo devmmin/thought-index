@@ -1,0 +1,20 @@
+# 로컬 개발: 파일형 H2 (서버 껐다 켜도 데이터 유지)
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/thought-index;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  flyway:
+    # 로컬에서만 예시 데이터(seed)를 넣는다. 운영 DB 에는 절대 안 들어감
+    locations: classpath:db/migration,classpath:db/seed
+  h2:
+    console:
+      enabled: true
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    org.hibernate.SQL: debug

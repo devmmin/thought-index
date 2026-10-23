@@ -1,0 +1,8 @@
+# 테스트: 매번 깨끗한 인메모리 DB
+spring:
+  datasource:
+    url: jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  flyway:
+    locations: classpath:db/migration
