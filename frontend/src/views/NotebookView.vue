@@ -181,10 +181,9 @@ async function onRemoveTab(tab) {
 }
 h1 {
   margin: 0;
-  font-family: var(--font-hand);
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
 }
 .icon-btn {
   color: var(--ink-muted);
@@ -211,20 +210,31 @@ h1 {
 }
 .panel-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
   padding: 0 4px 2px;
 }
 h2 {
+  flex: 1;
+  min-width: 0;
   margin: 0;
-  font-family: var(--font-hand);
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.35;
   color: var(--ink-tab);
+  /* 20자 탭 이름도 두 줄 안에서 끝나게 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .count {
+  flex-shrink: 0;
   font-size: 12px;
   color: var(--ink-muted);
+  line-height: 27px;
 }
 
 .list {
@@ -243,8 +253,9 @@ h2 {
 }
 .hand {
   margin: 0;
-  font-family: var(--font-hand);
-  font-size: 22px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
   color: var(--ink-soft);
 }
 .sub {

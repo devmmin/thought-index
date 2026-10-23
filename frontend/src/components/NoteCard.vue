@@ -52,21 +52,27 @@ const chip = computed(() => props.tab && paletteOf(props.tab.color))
 
 .top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
 }
 .title {
   flex: 1;
+  min-width: 0;
   margin: 0;
   font-size: 15px;
-  font-weight: 400;
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.4;
+  /* 긴 제목은 두 줄까지 보여주고 말줄임 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .pin {
   color: var(--accent);
   flex-shrink: 0;
+  margin-top: 3px;
 }
 
 .preview {
@@ -90,6 +96,10 @@ const chip = computed(() => props.tab && paletteOf(props.tab.color))
   color: var(--ink-muted);
 }
 .chip {
+  max-width: 9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 1px 8px;
   border-radius: 999px;
 }

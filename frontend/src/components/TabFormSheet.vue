@@ -25,6 +25,7 @@ watch(
   },
 )
 
+const NAME_MAX = 20 // 서버 IndexTabRequest 의 @Size(max = 20) 과 맞춘다
 const palette = computed(() => paletteOf(color.value))
 
 function submit() {
@@ -46,15 +47,23 @@ function submit() {
 
           <div class="preview">
             <div class="paper" />
-            <div class="sticker" :style="{ background: palette.tab, color: palette.ink }">
+            <div
+              class="sticker"
+              :class="{ long: name.trim().length > 6 }"
+              :style="{ background: palette.tab, color: palette.ink }"
+            >
               {{ name.trim() || '이름' }}
             </div>
           </div>
 
           <label class="field">
-            <span>이름</span>
-            <input v-model="name" maxlength="20" placeholder="아이디어" @input="error = ''" />
+            <span class="field-head">
+              이름
+              <span class="counter" :class="{ near: name.length >= NAME_MAX - 3 }">{{ name.length }}/{{ NAME_MAX }}</span>
+            </span>
+            <input v-model="name" :maxlength="NAME_MAX" placeholder="아이디어" @input="error = ''" />
           </label>
+          <p v-if="name.trim().length > 6" class="hint">탭에는 앞 6~7글자가 보여요. 짧을수록 한눈에 들어와요.</p>
           <p v-if="error" class="error">{{ error }}</p>
 
           <fieldset class="field">
@@ -127,9 +136,9 @@ function submit() {
 }
 h2 {
   margin: 0;
-  font-family: var(--font-hand);
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
+  letter-spacing: var(--tracking-tight);
 }
 
 .preview {
@@ -151,9 +160,34 @@ h2 {
   border-radius: 0 10px 10px 0;
   align-self: flex-start;
   margin-top: 8px;
-  max-height: 72px;
+  max-height: 100px;
+  white-space: nowrap;
+  font-weight: 600;
   overflow: hidden;
   transition: background-color 0.2s;
+}
+.sticker.long {
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+.paper {
+  height: 100px;
+}
+.field-head {
+  display: flex;
+  justify-content: space-between;
+}
+.counter {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.counter.near {
+  color: #c27a2c;
+}
+.hint {
+  margin: -6px 0 0;
+  font-size: 12px;
+  color: var(--ink-muted);
 }
 
 .field {

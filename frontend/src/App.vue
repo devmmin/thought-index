@@ -40,7 +40,10 @@ const { message } = useToast()
   padding: 10px 18px;
   border-radius: 999px;
   z-index: 50;
-  white-space: nowrap;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  text-align: center;
+  line-height: 1.4;
 }
 .toast-enter-active,
 .toast-leave-active {

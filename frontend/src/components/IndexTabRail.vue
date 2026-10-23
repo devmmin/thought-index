@@ -25,7 +25,7 @@ const emit = defineEmits(['select', 'edit', 'add'])
         :title="tab.id === activeId ? '한 번 더 누르면 인덱스를 고칠 수 있어요' : tab.name"
         @click="tab.id === activeId ? emit('edit', tab) : emit('select', tab)"
       >
-        <span class="label">{{ tab.name }}</span>
+        <span class="label" :class="{ long: tab.name.length > 6 }">{{ tab.name }}</span>
       </button>
     </TransitionGroup>
 
@@ -68,11 +68,18 @@ const emit = defineEmits(['select', 'edit', 'add'])
 .label {
   writing-mode: vertical-rl;
   font-size: 13px;
+  font-weight: 500;
   letter-spacing: 1px;
-  max-height: 96px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  /* 탭 높이는 이름 길이에 맞춰 늘어나되 6~7글자에서 멈추고, 넘치는 부분은 흐려지며 사라진다 */
+  max-height: 100px;
+  overflow: hidden;
+}
+.label.long {
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+.tab.active .label {
+  font-weight: 700;
 }
 
 .add {

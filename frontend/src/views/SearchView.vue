@@ -67,7 +67,9 @@ watch(q, (value) => {
         :accent="paletteOf(tabsStore.byId.get(note.tabId)?.color).accent"
       />
     </div>
-    <p v-if="searched && !results.length" class="empty">'{{ q.trim() }}'가 들어간 메모가 없어요.</p>
+    <p v-if="searched && !results.length" class="empty">
+      <span class="keyword">'{{ q.trim() }}'</span>가 들어간 메모가 없어요.
+    </p>
   </div>
 </template>
 
@@ -119,6 +121,15 @@ watch(q, (value) => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.keyword {
+  display: inline-block;
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--ink-soft);
 }
 .empty {
   text-align: center;

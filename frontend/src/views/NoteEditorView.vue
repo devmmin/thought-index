@@ -23,7 +23,12 @@ const updatedAt = ref(null)
 const status = ref('idle') // idle | dirty | saving | saved | error
 const ready = ref(false)
 const confirmingDelete = ref(false)
+const titleEl = ref(null)
 const contentEl = ref(null)
+
+// 서버 NoteRequest 의 @Size 와 같은 값
+const TITLE_MAX = 100
+const CONTENT_MAX = 10000
 
 const palette = computed(() => paletteOf(tabsStore.byId.get(form.value.tabId)?.color))
 
@@ -51,7 +56,8 @@ onMounted(async () => {
     }
     ready.value = true
     await nextTick()
-    autoGrow()
+    grow(titleEl.value)
+    grow(contentEl.value)
   } catch (e) {
     toast.show(e.message)
     router.replace('/')
@@ -116,8 +122,8 @@ onBeforeRouteLeave(async () => {
   return true
 })
 
-function autoGrow() {
-  const el = contentEl.value
+/** 내용만큼 높이를 늘려 textarea 안에 스크롤이 안 생기게 */
+function grow(el) {
   if (!el) return
   el.style.height = 'auto'
   el.style.height = `${el.scrollHeight}px`
@@ -187,15 +193,27 @@ async function remove() {
     </div>
 
     <article class="paper">
-      <input v-model="form.title" class="title" maxlength="100" placeholder="제목" aria-label="제목" />
+      <!-- 제목도 textarea: 길면 줄노트 위에서 다음 줄로 넘어간다. 엔터는 줄바꿈 대신 본문으로 이동 -->
+      <textarea
+        ref="titleEl"
+        v-model="form.title"
+        class="title"
+        rows="1"
+        :maxlength="TITLE_MAX"
+        placeholder="제목"
+        aria-label="제목"
+        @input="grow(titleEl)"
+        @keydown.enter.prevent="contentEl?.focus()"
+      />
+      <span v-if="form.title.length >= TITLE_MAX - 10" class="counter">{{ form.title.length }}/{{ TITLE_MAX }}</span>
       <textarea
         ref="contentEl"
         v-model="form.content"
         class="content"
-        maxlength="10000"
+        :maxlength="CONTENT_MAX"
         placeholder="떠오르는 대로 적어 보세요"
         aria-label="내용"
-        @input="autoGrow"
+        @input="grow(contentEl)"
       />
     </article>
   </div>
@@ -267,6 +285,10 @@ async function remove() {
 }
 .pick {
   flex-shrink: 0;
+  max-width: 8.5em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 13px;
   padding: 6px 12px;
   border-radius: 10px 10px 4px 4px;
@@ -303,20 +325,28 @@ async function remove() {
   border: none;
   outline: none;
   background: transparent;
-  font-family: var(--font-hand);
+  font-family: inherit;
   line-height: var(--line);
   padding: 0;
   width: 100%;
 }
 .title {
-  height: calc(var(--line) * 1);
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 700;
+  letter-spacing: var(--tracking-tight);
   color: var(--ink);
-  margin-bottom: 0;
+  resize: none;
+  overflow: hidden;
+}
+.counter {
+  align-self: flex-end;
+  font-size: 12px;
+  line-height: 20px;
+  color: #c27a2c;
+  font-variant-numeric: tabular-nums;
 }
 .content {
-  font-size: 19px;
+  font-size: 16px;
   min-height: calc(var(--line) * 12);
   resize: none;
   overflow: hidden;
