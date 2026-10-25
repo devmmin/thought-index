@@ -37,11 +37,32 @@ export const useTabsStore = defineStore('tabs', () => {
     tabs.value = tabs.value.filter((t) => t.id !== id)
   }
 
+  /**
+   * 끌어서 순서 바꾸기. 화면을 먼저 바꾸고(낙관적 업데이트) 서버에 알린다.
+   * 서버가 거절하면 원래 순서로 되돌린다.
+   */
+  async function reorderTabs(orderedIds) {
+    const before = tabs.value
+    tabs.value = orderedIds.map((id, i) => ({ ...byId.value.get(id), position: i }))
+    try {
+      await tabsApi.reorder(orderedIds)
+    } catch (e) {
+      tabs.value = before
+      throw e
+    }
+  }
+
+  /** 로그아웃하면 이전 사람의 탭이 화면에 남지 않게 비운다 */
+  function reset() {
+    tabs.value = []
+    loaded.value = false
+  }
+
   /** 메모를 쓰거나 지운 뒤 탭 옆 숫자를 맞춘다 */
   function bumpCount(tabId, delta) {
     const tab = byId.value.get(tabId)
     if (tab) tab.noteCount = Math.max(0, tab.noteCount + delta)
   }
 
-  return { tabs, loaded, byId, fetchTabs, ensureLoaded, createTab, updateTab, removeTab, bumpCount }
+  return { tabs, loaded, byId, fetchTabs, ensureLoaded, createTab, updateTab, removeTab, reorderTabs, reset, bumpCount }
 })

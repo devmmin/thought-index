@@ -1,13 +1,14 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { PencilLine, Search } from 'lucide-vue-next'
+import { CircleUserRound, PencilLine, Search } from 'lucide-vue-next'
 import IndexTabRail from '@/components/IndexTabRail.vue'
 import NoteCard from '@/components/NoteCard.vue'
 import TabFormSheet from '@/components/TabFormSheet.vue'
 import { notesApi } from '@/api/notes'
 import { paletteOf } from '@/constants/tabColors'
 import { useTabsStore } from '@/stores/tabs'
+import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 
 const props = defineProps({
@@ -16,7 +17,18 @@ const props = defineProps({
 
 const router = useRouter()
 const tabsStore = useTabsStore()
+const auth = useAuthStore()
 const toast = useToast()
+
+const accountOpen = ref(false)
+async function toggleAccount() {
+  accountOpen.value = !accountOpen.value
+  if (accountOpen.value && !auth.member) auth.fetchMe().catch(() => {})
+}
+function logout() {
+  auth.logout()
+  router.replace({ name: 'login' })
+}
 
 const notes = ref([])
 const page = ref(0)
@@ -92,6 +104,14 @@ async function onSubmitTab(payload) {
   }
 }
 
+async function onReorder(ids) {
+  try {
+    await tabsStore.reorderTabs(ids)
+  } catch (e) {
+    toast.show(e.message)
+  }
+}
+
 async function onRemoveTab(tab) {
   try {
     await tabsStore.removeTab(tab.id)
@@ -108,10 +128,22 @@ async function onRemoveTab(tab) {
   <div class="notebook">
     <header class="header">
       <h1>생각서랍</h1>
-      <RouterLink to="/search" class="icon-btn" aria-label="검색">
-        <Search :size="20" />
-      </RouterLink>
+      <div class="header-actions">
+        <RouterLink to="/search" class="icon-btn" aria-label="검색">
+          <Search :size="20" />
+        </RouterLink>
+        <button class="icon-btn" aria-label="내 계정" :aria-expanded="accountOpen" @click="toggleAccount">
+          <CircleUserRound :size="20" />
+        </button>
+      </div>
     </header>
+
+    <Transition name="fold">
+      <div v-if="accountOpen" class="account">
+        <span class="account-email">{{ auth.member?.email ?? '…' }}</span>
+        <button class="logout" @click="logout">로그아웃</button>
+      </div>
+    </Transition>
 
     <!-- 탭이 하나도 없을 때 -->
     <section v-if="tabsStore.loaded && !tabsStore.tabs.length" class="empty-start">
@@ -152,6 +184,7 @@ async function onRemoveTab(tab) {
         @select="(t) => router.push(`/tabs/${t.id}`)"
         @edit="openEdit"
         @add="openCreate"
+        @reorder="onReorder"
       />
     </main>
 
@@ -184,6 +217,43 @@ h1 {
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.04em;
+}
+.header-actions {
+  display: flex;
+  gap: 2px;
+}
+.account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -4px 14px 12px 6px;
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  font-size: 13px;
+}
+.account-email {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.logout {
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+.fold-enter-active,
+.fold-leave-active {
+  transition: opacity 0.18s, transform 0.18s;
+}
+.fold-enter-from,
+.fold-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 .icon-btn {
   color: var(--ink-muted);
