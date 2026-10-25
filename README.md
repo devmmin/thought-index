@@ -2,8 +2,8 @@
 
 생각을 파스텔 인덱스 탭에 꽂아 정리하는 메모 앱.
 
-- **backend/** Spring Boot 4.1 · Java 21 · JPA · Flyway · H2(로컬) / PostgreSQL(운영)
-- **frontend/** Vue 3 · Vite · Pinia · Vue Router
+- **backend/** Spring Boot 4.1 · Java 21 · JPA · Flyway · Spring Security(JWT, OAuth2) · H2(로컬) / PostgreSQL(운영)
+- **frontend/** Vue 3 · Vite · Pinia · Vue Router · PWA
 
 ## 실행
 
@@ -14,6 +14,8 @@ cd backend && ./gradlew bootRun
 # 2) 프론트 (http://localhost:5190) — Node 22 필요
 cd frontend && nvm use && npm install && npm run dev
 ```
+
+로컬 데모 계정: `demo@thoughtindex.local` / `demo1234` (local 프로필에서만 생성)
 
 테스트: `cd backend && ./gradlew test`
 로컬 DB 보기: http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/thought-index`, user `sa`)
@@ -104,9 +106,23 @@ src/
 └── constants/    파스텔 팔레트
 ```
 
+## 로그인
+
+- 이메일 + 비밀번호 → 서버가 JWT(HS256) 발급 → 화면은 `Authorization: Bearer` 로 전송 (세션 없음)
+- 구글 로그인은 `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID/SECRET` 환경변수가 있을 때만 켜짐
+- 탭은 `member_id` 로 주인을 갖고, 메모는 탭을 통해 주인이 정해진다. 남의 데이터는 404
+
+## 배포 (전부 무료)
+
+| 무엇 | 어디 | 설정 파일 |
+| --- | --- | --- |
+| 서버 | Render (Docker) | `render.yaml`, `backend/Dockerfile` |
+| DB | Supabase PostgreSQL (Session pooler) | 환경변수 `DB_URL` `DB_USERNAME` `DB_PASSWORD` |
+| 화면 | Vercel (Root Directory: `frontend`) | `frontend/vercel.json`, 환경변수 `VITE_API_BASE_URL` |
+
+단계별 가이드는 설계 문서의 "8. 출시 가이드" 탭.
+
 ## 다음 단계 아이디어
 
-- [ ] Spring Security + JWT 로그인 → `Member` 도메인 추가, 탭·메모에 `member_id`
-- [ ] 탭 드래그로 순서 바꾸기 (API 는 이미 있음: `PUT /api/tabs/order`)
-- [ ] 운영 배포: 백엔드(Render/Fly.io + PostgreSQL), 프론트(Vercel)
-- [ ] PWA 로 홈 화면에 추가
+- [ ] 메모 보관하기(archived) — 스터디 커리큘럼 7~12주 실습
+- [ ] 토큰 갱신(refresh token), 비밀번호 재설정 메일
