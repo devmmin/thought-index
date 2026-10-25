@@ -20,6 +20,15 @@ spring:
       hibernate:
         default_batch_fetch_size: 100
 
+server:
+  # Render 같은 호스팅은 포트를 PORT 환경변수로 정해준다
+  port: ${PORT:8080}
+  # 프록시(https) 뒤에서 돌 때 원래 주소를 알아야 구글 로그인 redirect 주소가 https 로 만들어진다
+  forward-headers-strategy: framework
+
 app:
   cors:
     allowed-origins: http://localhost:5190
+  auth:
+    token-ttl: 7d
+    frontend-url: http://localhost:5190

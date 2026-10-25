@@ -42,12 +42,14 @@ class IndexTabServiceTest {
     @InjectMocks
     IndexTabService indexTabService;
 
+    static final Long ME = 1L;
+
     @Test
     @DisplayName("탭이 이미 8개면 더 붙일 수 없다")
     void create_overLimit() {
-        given(indexTabRepository.count()).willReturn((long) IndexTab.MAX_COUNT);
+        given(indexTabRepository.countByMemberId(ME)).willReturn((long) IndexTab.MAX_COUNT);
 
-        assertThatThrownBy(() -> indexTabService.create(new IndexTabRequest("새 탭", TabColor.PINK)))
+        assertThatThrownBy(() -> indexTabService.create(ME, new IndexTabRequest("새 탭", TabColor.PINK)))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.TAB_LIMIT_EXCEEDED);
         verify(indexTabRepository, never()).save(any());
@@ -56,10 +58,10 @@ class IndexTabServiceTest {
     @Test
     @DisplayName("새 탭은 맨 아래(position = 현재 개수)에 붙고 이름 앞뒤 공백은 지운다")
     void create_appendsToBottom() {
-        given(indexTabRepository.count()).willReturn(3L);
+        given(indexTabRepository.countByMemberId(ME)).willReturn(3L);
         given(indexTabRepository.save(any(IndexTab.class))).willAnswer(inv -> inv.getArgument(0));
 
-        var response = indexTabService.create(new IndexTabRequest("  공부  ", TabColor.SKY));
+        var response = indexTabService.create(ME, new IndexTabRequest("  공부  ", TabColor.SKY));
 
         assertThat(response.position()).isEqualTo(3);
         assertThat(response.name()).isEqualTo("공부");
@@ -68,9 +70,9 @@ class IndexTabServiceTest {
     @Test
     @DisplayName("순서 변경은 현재 탭 전체 id 를 보내야 한다")
     void reorder_mismatch() {
-        given(indexTabRepository.findAll()).willReturn(List.of(tab(1L, 0), tab(2L, 1)));
+        given(indexTabRepository.findAllByMemberIdOrderByPositionAsc(ME)).willReturn(List.of(tab(1L, 0), tab(2L, 1)));
 
-        assertThatThrownBy(() -> indexTabService.reorder(List.of(1L)))
+        assertThatThrownBy(() -> indexTabService.reorder(ME, List.of(1L)))
                 .extracting("errorCode").isEqualTo(ErrorCode.TAB_ORDER_MISMATCH);
     }
 
@@ -79,16 +81,16 @@ class IndexTabServiceTest {
     void reorder() {
         IndexTab first = tab(1L, 0);
         IndexTab second = tab(2L, 1);
-        given(indexTabRepository.findAll()).willReturn(List.of(first, second));
+        given(indexTabRepository.findAllByMemberIdOrderByPositionAsc(ME)).willReturn(List.of(first, second));
 
-        indexTabService.reorder(List.of(2L, 1L));
+        indexTabService.reorder(ME, List.of(2L, 1L));
 
         assertThat(second.getPosition()).isZero();
         assertThat(first.getPosition()).isEqualTo(1);
     }
 
     private IndexTab tab(Long id, int position) {
-        IndexTab tab = IndexTab.create("탭" + id, TabColor.MINT, position);
+        IndexTab tab = IndexTab.create(ME, "탭" + id, TabColor.MINT, position);
         // id 는 DB 가 만들어주는 값이라 단위 테스트에서만 강제로 넣는다
         ReflectionTestUtils.setField(tab, "id", id);
         return tab;

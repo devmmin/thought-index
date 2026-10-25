@@ -4,7 +4,17 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      # 무료 DB 는 동시 연결 수가 적다
+      maximum-pool-size: 5
 
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  auth:
+    jwt-secret: ${JWT_SECRET}
+    frontend-url: ${FRONTEND_URL}
+
+# 구글 로그인은 GOOGLE 환경변수가 있을 때만 켜진다 (Render 에 넣는 이름):
+#   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID
+#   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET

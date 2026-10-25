@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.thoughtindex.global.config.JpaConfig;
+import com.thoughtindex.member.domain.Member;
 import com.thoughtindex.note.domain.Note;
 import com.thoughtindex.note.domain.NoteRepository;
 import com.thoughtindex.tab.domain.IndexTab;
@@ -31,10 +32,14 @@ class NoteRepositoryTest {
     @Autowired
     NoteRepository noteRepository;
 
+    private Long newMember(String email) {
+        return em.persist(Member.withPassword(email, "{noop}x", "테스트")).getId();
+    }
+
     @Test
     @DisplayName("탭의 메모는 고정한 것부터 나온다")
     void findByTab_pinnedFirst() {
-        IndexTab tab = em.persist(IndexTab.create("공부", TabColor.SKY, 0));
+        IndexTab tab = em.persist(IndexTab.create(newMember("a@test.com"), "공부", TabColor.SKY, 0));
         em.persist(Note.write(tab, "일반 메모", "", false));
         em.persist(Note.write(tab, "고정 메모", "", true));
 
@@ -44,15 +49,19 @@ class NoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("검색은 제목과 내용을 대소문자 구분 없이 찾는다")
+    @DisplayName("검색은 내 메모의 제목과 내용을 대소문자 구분 없이 찾는다")
     void search() {
-        IndexTab tab = em.persist(IndexTab.create("공부", TabColor.SKY, 0));
+        Long me = newMember("me@test.com");
+        Long other = newMember("other@test.com");
+        IndexTab tab = em.persist(IndexTab.create(me, "공부", TabColor.SKY, 0));
+        IndexTab othersTab = em.persist(IndexTab.create(other, "남의 탭", TabColor.MINT, 0));
         em.persist(Note.write(tab, "JPA 정리", "", false));
         em.persist(Note.write(tab, "오늘 배운 것", "spring 트랜잭션", false));
         em.persist(Note.write(tab, "장보기", "우유", false));
+        em.persist(Note.write(othersTab, "남의 JPA 메모", "", false));
 
-        assertThat(noteRepository.search("jpa", PageRequest.of(0, 10)).getContent())
+        assertThat(noteRepository.search(me, "jpa", PageRequest.of(0, 10)).getContent())
                 .extracting(Note::getTitle).containsExactly("JPA 정리");
-        assertThat(noteRepository.search("SPRING", PageRequest.of(0, 10)).getTotalElements()).isEqualTo(1);
+        assertThat(noteRepository.search(me, "SPRING", PageRequest.of(0, 10)).getTotalElements()).isEqualTo(1);
     }
 }

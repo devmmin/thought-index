@@ -19,6 +19,12 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 요청 방식이에요."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "잠시 후 다시 시도해 주세요."),
 
+    // 회원 · 로그인
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요해요."),
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 맞지 않아요."),
+    EMAIL_ALREADY_USED(HttpStatus.CONFLICT, "이미 가입된 이메일이에요."),
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어요."),
+
     // 인덱스 탭
     TAB_NOT_FOUND(HttpStatus.NOT_FOUND, "인덱스를 찾을 수 없어요."),
     TAB_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "인덱스는 최대 8개까지 붙일 수 있어요."),

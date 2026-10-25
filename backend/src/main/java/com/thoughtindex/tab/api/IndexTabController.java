@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.thoughtindex.global.security.CurrentMember;
 import com.thoughtindex.tab.api.dto.IndexTabRequest;
 import com.thoughtindex.tab.api.dto.IndexTabResponse;
 import com.thoughtindex.tab.api.dto.TabOrderRequest;
@@ -32,31 +33,33 @@ public class IndexTabController {
     private final IndexTabService indexTabService;
 
     @GetMapping
-    public List<IndexTabResponse> findAll() {
-        return indexTabService.findAll();
+    public List<IndexTabResponse> findAll(@CurrentMember Long memberId) {
+        return indexTabService.findAll(memberId);
     }
 
     @PostMapping
-    public ResponseEntity<IndexTabResponse> create(@Valid @RequestBody IndexTabRequest request) {
-        IndexTabResponse created = indexTabService.create(request);
+    public ResponseEntity<IndexTabResponse> create(@CurrentMember Long memberId,
+                                                   @Valid @RequestBody IndexTabRequest request) {
+        IndexTabResponse created = indexTabService.create(memberId, request);
         // 201 Created + 새로 생긴 자원의 위치
         return ResponseEntity.created(URI.create("/api/tabs/" + created.id())).body(created);
     }
 
     @PutMapping("/{tabId}")
-    public IndexTabResponse update(@PathVariable Long tabId, @Valid @RequestBody IndexTabRequest request) {
-        return indexTabService.update(tabId, request);
+    public IndexTabResponse update(@CurrentMember Long memberId, @PathVariable Long tabId,
+                                   @Valid @RequestBody IndexTabRequest request) {
+        return indexTabService.update(memberId, tabId, request);
     }
 
     @PutMapping("/order")
-    public ResponseEntity<Void> reorder(@Valid @RequestBody TabOrderRequest request) {
-        indexTabService.reorder(request.tabIds());
+    public ResponseEntity<Void> reorder(@CurrentMember Long memberId, @Valid @RequestBody TabOrderRequest request) {
+        indexTabService.reorder(memberId, request.tabIds());
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{tabId}")
-    public ResponseEntity<Void> delete(@PathVariable Long tabId) {
-        indexTabService.delete(tabId);
+    public ResponseEntity<Void> delete(@CurrentMember Long memberId, @PathVariable Long tabId) {
+        indexTabService.delete(memberId, tabId);
         return ResponseEntity.noContent().build();
     }
 }

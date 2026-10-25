@@ -24,12 +24,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class IndexTab extends BaseTimeEntity {
 
-    /** 한 번에 붙일 수 있는 탭 수. 화면 옆에 다 들어가야 해서 제한한다 */
+    /** 한 사람이 붙일 수 있는 탭 수. 화면 옆에 다 들어가야 해서 제한한다 */
     public static final int MAX_COUNT = 8;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * 주인 회원의 id.
+     * Member 객체(@ManyToOne)가 아니라 id 만 들고 있다: 탭은 "누구 것인지"만 알면 되고 회원 정보는 필요 없다.
+     * 다른 도메인은 id 로만 참조하면 tab 패키지가 member 패키지의 클래스를 몰라도 된다.
+     */
+    @Column(nullable = false)
+    private Long memberId;
 
     @Column(nullable = false, length = 20)
     private String name;
@@ -43,14 +51,15 @@ public class IndexTab extends BaseTimeEntity {
     @Column(nullable = false)
     private int position;
 
-    private IndexTab(String name, TabColor color, int position) {
+    private IndexTab(Long memberId, String name, TabColor color, int position) {
+        this.memberId = memberId;
         this.name = name;
         this.color = color;
         this.position = position;
     }
 
-    public static IndexTab create(String name, TabColor color, int position) {
-        return new IndexTab(name, color, position);
+    public static IndexTab create(Long memberId, String name, TabColor color, int position) {
+        return new IndexTab(memberId, name, color, position);
     }
 
     public void update(String name, TabColor color) {

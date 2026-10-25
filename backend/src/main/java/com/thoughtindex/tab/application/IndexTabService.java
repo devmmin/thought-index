@@ -35,37 +35,37 @@ public class IndexTabService {
     private final IndexTabRepository indexTabRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public List<IndexTabResponse> findAll() {
-        Map<Long, Long> noteCounts = indexTabRepository.countNotesPerTab().stream()
+    public List<IndexTabResponse> findAll(Long memberId) {
+        Map<Long, Long> noteCounts = indexTabRepository.countNotesPerTab(memberId).stream()
                 .collect(Collectors.toMap(TabNoteCount::getTabId, TabNoteCount::getNoteCount));
 
-        return indexTabRepository.findAllByOrderByPositionAsc().stream()
+        return indexTabRepository.findAllByMemberIdOrderByPositionAsc(memberId).stream()
                 .map(tab -> IndexTabResponse.of(tab, noteCounts.getOrDefault(tab.getId(), 0L)))
                 .toList();
     }
 
     @Transactional
-    public IndexTabResponse create(IndexTabRequest request) {
-        long count = indexTabRepository.count();
+    public IndexTabResponse create(Long memberId, IndexTabRequest request) {
+        long count = indexTabRepository.countByMemberId(memberId);
         if (count >= IndexTab.MAX_COUNT) {
             throw new BusinessException(ErrorCode.TAB_LIMIT_EXCEEDED);
         }
         // 새 탭은 맨 아래에 붙인다
-        IndexTab tab = IndexTab.create(request.name().strip(), request.color(), (int) count);
+        IndexTab tab = IndexTab.create(memberId, request.name().strip(), request.color(), (int) count);
         return IndexTabResponse.of(indexTabRepository.save(tab), 0);
     }
 
     @Transactional
-    public IndexTabResponse update(Long tabId, IndexTabRequest request) {
-        IndexTab tab = getTab(tabId);
+    public IndexTabResponse update(Long memberId, Long tabId, IndexTabRequest request) {
+        IndexTab tab = getTab(memberId, tabId);
         // save() 를 다시 부르지 않아도 된다: 트랜잭션이 끝날 때 바뀐 필드를 JPA 가 알아서 UPDATE (변경 감지)
         tab.update(request.name().strip(), request.color());
         return IndexTabResponse.of(tab, indexTabRepository.countNotesByTabId(tabId));
     }
 
     @Transactional
-    public void reorder(List<Long> tabIds) {
-        List<IndexTab> tabs = indexTabRepository.findAll();
+    public void reorder(Long memberId, List<Long> tabIds) {
+        List<IndexTab> tabs = indexTabRepository.findAllByMemberIdOrderByPositionAsc(memberId);
         // 일부만 보내거나 없는 id 를 섞으면 순서가 꼬이니 "현재 탭 전체"와 정확히 같아야 한다
         boolean sameSet = tabs.size() == tabIds.size()
                 && new HashSet<>(tabIds).equals(tabs.stream().map(IndexTab::getId).collect(Collectors.toSet()));
@@ -80,23 +80,26 @@ public class IndexTabService {
     }
 
     @Transactional
-    public void delete(Long tabId) {
-        getTab(tabId); // 없으면 404
+    public void delete(Long memberId, Long tabId) {
+        getTab(memberId, tabId); // 없거나 남의 탭이면 404
         // 리스너가 같은 트랜잭션 안에서 바로 메모를 지운다 → 그다음 탭 삭제 (FK 안 걸림)
         eventPublisher.publishEvent(new TabDeletedEvent(tabId));
         // 리스너의 벌크 삭제가 1차 캐시를 비웠으니, 위에서 꺼낸 엔티티 대신 id 로 다시 찾아 지운다
         indexTabRepository.deleteById(tabId);
 
         // 지운 탭 아래 있던 탭들을 한 칸씩 당겨 position 을 0..n-1 로 유지
-        List<IndexTab> remaining = indexTabRepository.findAllByOrderByPositionAsc();
+        List<IndexTab> remaining = indexTabRepository.findAllByMemberIdOrderByPositionAsc(memberId);
         for (int i = 0; i < remaining.size(); i++) {
             remaining.get(i).moveTo(i);
         }
     }
 
-    /** 다른 도메인(note)에서도 "존재하는 탭"을 가져갈 때 쓴다 */
-    public IndexTab getTab(Long tabId) {
-        return indexTabRepository.findById(tabId)
+    /**
+     * 다른 도메인(note)에서도 "내 탭"을 가져갈 때 쓴다.
+     * 남의 탭이면 403 이 아니라 404: "있긴 한데 네 거 아님"을 알려주면 남의 탭 번호가 존재한다는 정보가 샌다.
+     */
+    public IndexTab getTab(Long memberId, Long tabId) {
+        return indexTabRepository.findByIdAndMemberId(tabId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TAB_NOT_FOUND));
     }
 }

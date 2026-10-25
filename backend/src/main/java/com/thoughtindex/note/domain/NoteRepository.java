@@ -12,21 +12,23 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     Page<Note> findByTabIdOrderByPinnedDescUpdatedAtDesc(Long tabId, Pageable pageable);
 
     /**
-     * 제목 + 내용 검색. 메서드 이름이 너무 길어지는 쿼리는 @Query 로 직접 쓰는 게 읽기 쉽다.
+     * 내 메모 중에서 제목 + 내용 검색. 메서드 이름이 너무 길어지는 쿼리는 @Query 로 직접 쓰는 게 읽기 쉽다.
      * join fetch: 결과마다 탭 이름을 쓰는데, 지연로딩이면 메모 수만큼 탭 조회 쿼리가 더 나간다 (N+1)
      */
     @Query(value = """
-            select n from Note n join fetch n.tab
-            where lower(n.title) like lower(concat('%', :keyword, '%'))
-               or lower(n.content) like lower(concat('%', :keyword, '%'))
+            select n from Note n join fetch n.tab t
+            where t.memberId = :memberId
+              and (lower(n.title) like lower(concat('%', :keyword, '%'))
+                   or lower(n.content) like lower(concat('%', :keyword, '%')))
             order by n.updatedAt desc
             """,
             countQuery = """
-            select count(n) from Note n
-            where lower(n.title) like lower(concat('%', :keyword, '%'))
-               or lower(n.content) like lower(concat('%', :keyword, '%'))
+            select count(n) from Note n join n.tab t
+            where t.memberId = :memberId
+              and (lower(n.title) like lower(concat('%', :keyword, '%'))
+                   or lower(n.content) like lower(concat('%', :keyword, '%')))
             """)
-    Page<Note> search(String keyword, Pageable pageable);
+    Page<Note> search(Long memberId, String keyword, Pageable pageable);
 
     /**
      * 탭 삭제 시 메모를 한 방에 지운다.
